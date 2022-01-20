@@ -378,3 +378,27 @@ def test_assert_match_unsupported_value_slash_r(testdir, basic_case_dir):
         'E* ValueError: Snapshot testing strings containing "\\r" is not supported.',
     ])
     assert result.ret == 1
+
+
+def test_assert_match_return_value_available(testdir, basic_case_dir):
+    testdir.makepyfile(r"""
+        import os
+        def test_sth(snapshot):
+            snapshot.snapshot_dir = 'case_dir'
+            expected = b'the valu\xc3\x89 of snapshot1.txt' + os.linesep.encode()
+            assert snapshot.assert_match(expected, 'snapshot1.txt') == expected
+    """)
+    assert_pytest_passes(testdir)
+
+
+def test_assert_match_return_value_available_updated_data(testdir, basic_case_dir):
+    testdir.makepyfile(r"""
+        import os
+        def test_sth(snapshot):
+            snapshot.snapshot_dir = 'case_dir'
+            expected = b'updated data'
+            assert snapshot.assert_match(expected, 'snapshot1.txt') == expected
+    """)
+    result = testdir.runpytest('-v', '--snapshot-update')
+    assert result.ret == 1
+

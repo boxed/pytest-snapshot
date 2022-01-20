@@ -304,3 +304,47 @@ def test_assert_match_dir_path_traversal_name(testdir, basic_case_dir):
         "E* ValueError: Key 'subdir1/subobj1.txt' in d must be a valid file name.",
     ])
     assert result.ret == 1
+
+
+def test_assert_match_dir_success_return_value(testdir, basic_case_dir):
+    testdir.makepyfile("""
+        import os.path
+    
+        def test_sth(snapshot):
+            snapshot.snapshot_dir = 'case_dir'
+            expected = {
+                'obj1.txt': 'the value of obj1.txt',
+                # The expected value here isn't nested like the input, but flattened!
+                os.path.join('subdir1', 'subobj1.txt'): 'the value of subobj1.txt',
+            }
+            assert snapshot.assert_match_dir({
+                'obj1.txt': 'the value of obj1.txt',
+                'subdir1': {
+                    'subobj1.txt': 'the value of subobj1.txt',
+                },
+            }, 'dict_snapshot1') == expected
+    """)
+    assert_pytest_passes(testdir)
+
+
+def test_assert_match_dir_success_updated_return_value(testdir, basic_case_dir):
+    testdir.makepyfile("""
+        import os.path
+
+        def test_sth(snapshot):
+            snapshot.snapshot_dir = 'case_dir'
+            updated_value = 'updated'
+            expected = {
+                'obj1.txt': updated_value,
+                # The expected value here isn't nested like the input, but flattened!
+                os.path.join('subdir1', 'subobj1.txt'): updated_value,
+            }
+            assert snapshot.assert_match_dir({
+                'obj1.txt': updated_value,
+                'subdir1': {
+                    'subobj1.txt': updated_value,
+                },
+            }, 'dict_snapshot1') == expected
+    """)
+    result = testdir.runpytest('-v', '--snapshot-update')
+    assert result.ret == 1

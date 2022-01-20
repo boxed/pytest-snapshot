@@ -165,8 +165,10 @@ class Snapshot:
         else:
             encoded_expected_value = None
 
+        expected_value = None
         if self._snapshot_update:
             encoded_value = encode(value)
+
             if encoded_expected_value is None or encoded_value != encoded_expected_value:
                 decoded_encoded_value = decode(encoded_value)
                 if decoded_encoded_value != value:
@@ -178,6 +180,8 @@ class Snapshot:
                     self._created_snapshots.append(snapshot_path)
                 else:
                     self._updated_snapshots.append(snapshot_path)
+
+                expected_value = decoded_encoded_value
         else:
             if encoded_expected_value is not None:
                 expected_value = decode(encoded_expected_value)
@@ -196,6 +200,8 @@ class Snapshot:
                 raise AssertionError(
                     "snapshot {} doesn't exist. (run pytest with --snapshot-update to create it)".format(
                         shorten_path(snapshot_path)))
+
+        return expected_value
 
     def assert_match_dir(self, dir_dict: dict, snapshot_dir_name: Union[str, Path]):
         """
@@ -237,6 +243,8 @@ class Snapshot:
         # Call assert_match to add, update, or assert equality for all snapshot files in the directory.
         for name, value in values_by_filename.items():
             self.assert_match(value, snapshot_dir_path.joinpath(name))
+
+        return values_by_filename
 
 
 def _get_default_snapshot_dir(node: _pytest.python.Function) -> Path:
